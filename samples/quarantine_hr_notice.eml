@@ -1,0 +1,13 @@
+Received: from unknown-server.net ([203.0.113.19])
+    by mail-gw.antigravity.security with ESMTP id 77812
+    for <employee@securecorp.org>; Fri, 07 Nov 2026 12:30:00 +0000
+Return-Path: <unauthorized@unknown-server.net>
+From: HR Internal Portal <humanresources@securecorp.org>
+To: Employee <employee@securecorp.org>
+Subject: Notice: Annual Benefits Open Enrollment Form
+Date: Fri, 07 Nov 2026 12:30:00 +0000
+Message-ID: <hr-benefits-2026@securecorp.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Please fill out your open enrollment form at the external portal link.

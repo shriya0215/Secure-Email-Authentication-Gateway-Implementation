@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Email Authentication Gateway (SPF | DKIM | DMARC)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              dark: '#0a0f1d',
+              card: '#12192d',
+              border: '#1e293b',
+              accent: '#38bdf8',
+              pass: '#10b981',
+              fail: '#ef4444',
+              warn: '#f59e0b',
+              info: '#6366f1'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0b1120;
+    }
+    code, pre, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            Email Auth Gateway
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">SPF • DKIM • DMARC</span>
+          </h1>
+          <p class="text-xs text-slate-400">Enterprise Anti-Spoofing & Phishing Defense Platform</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex space-x-1 sm:space-x-2">
+        <button onclick="switchTab('inspector')" id="tab-inspector" class="tab-btn px-3.5 py-1.5 rounded-lg text-sm font-medium transition bg-cyan-600 text-white shadow-sm">
+          Header Inspector
+        </button>
+        <button onclick="switchTab('dkim')" id="tab-dkim" class="tab-btn px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          DKIM Key Studio
+        </button>
+        <button onclick="switchTab('staging')" id="tab-staging" class="tab-btn px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          Policy Staging
+        </button>
+        <button onclick="switchTab('dns')" id="tab-dns" class="tab-btn px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          DNS Zone
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- ==================== TAB 1: HEADER INSPECTOR ==================== -->
+    <div id="view-inspector" class="space-y-6">
+
+      <!-- Scenario Selector Banner -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <label class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
+              Test Attack Scenarios & Benchmarks
+            </label>
+            <p class="text-sm text-slate-300">Select a real-world scenario to populate headers and test detection logic:</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2" id="scenario-buttons">
+            <!-- Populated via JavaScript -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Input and Inspection Controls Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Raw Email Input -->
+        <div class="lg:col-span-5 space-y-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col h-full">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <span class="text-sm font-semibold text-white flex items-center gap-2">
+                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Raw Email Message / Headers
+              </span>
+              <button onclick="clearInspectorInput()" class="text-xs text-slate-400 hover:text-rose-400 transition">
+                Clear Input
+              </button>
+            </div>
+
+            <!-- Header Input Textarea -->
+            <div class="mt-3 flex-1">
+              <textarea id="raw-email-input" rows="16" class="w-full h-full font-mono text-xs bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-300 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition resize-none" placeholder="Paste full raw email (headers + body) or email headers here..."></textarea>
+            </div>
+
+            <!-- Optional Parameters -->
+            <div class="mt-4 pt-3 border-t border-slate-800 grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-medium text-slate-400 block mb-1">Client IP Override (Optional)</label>
+                <input id="client-ip-input" type="text" placeholder="Auto-detected from Received" class="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+              </div>
+              <div>
+                <label class="text-xs font-medium text-slate-400 block mb-1">Envelope Sender (Optional)</label>
+                <input id="envelope-from-input" type="text" placeholder="Auto from Return-Path/From" class="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500">
+              </div>
+            </div>
+
+            <!-- Inspect Button -->
+            <div class="mt-4">
+              <button onclick="runInspection()" id="btn-inspect" class="w-full py-3 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-lg shadow-cyan-500/25 transition flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Verify & Analyze Authentication
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Results & Security Analysis -->
+        <div class="lg:col-span-7 space-y-4">
+
+          <!-- Executive Verdict Banner -->
+          <div id="verdict-banner" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl transition-all">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="flex items-center gap-3">
+                  <span id="verdict-badge" class="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-800 text-slate-400">
+                    Awaiting Input
+                  </span>
+                  <span id="threat-badge" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                    STATUS: READY
+                  </span>
+                </div>
+                <h3 id="verdict-title" class="text-lg font-bold text-white mt-2">
+                  Paste an email or choose a scenario to inspect
+                </h3>
+                <p id="verdict-desc" class="text-xs text-slate-400 mt-1">
+                  The gateway will evaluate SPF sender authorization, verify DKIM RSA cryptographic signatures, and enforce DMARC identifier alignment.
+                </p>
+              </div>
+              <div id="verdict-icon" class="w-12 h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-400 shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+              </div>
+            </div>
+
+            <div id="action-box" class="mt-4 pt-3 border-t border-slate-800/80 text-xs text-slate-300 hidden">
+              <span class="font-bold text-cyan-400">Gateway Policy Action:</span>
+              <span id="action-text" class="ml-1 text-slate-300"></span>
+            </div>
+          </div>
+
+          <!-- Authentication Triad Cards Grid (SPF, DKIM, DMARC) -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <!-- SPF Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-400">SPF (RFC 7208)</span>
+                  <span id="spf-status-badge" class="text-xs px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400">-</span>
+                </div>
+                <div class="text-xs space-y-1.5 mt-3">
+                  <div>
+                    <span class="text-slate-500 block">Domain:</span>
+                    <span id="spf-domain" class="font-mono text-slate-200 break-all">-</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block">Client IP:</span>
+                    <span id="spf-ip" class="font-mono text-slate-200">-</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block">Matched Mechanism:</span>
+                    <span id="spf-mechanism" class="font-mono text-cyan-400">-</span>
+                  </div>
+                </div>
+              </div>
+              <p id="spf-explanation" class="text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-800">
+                Awaiting analysis
+              </p>
+            </div>
+
+            <!-- DKIM Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-400">DKIM (RFC 6376)</span>
+                  <span id="dkim-status-badge" class="text-xs px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400">-</span>
+                </div>
+                <div class="text-xs space-y-1.5 mt-3">
+                  <div>
+                    <span class="text-slate-500 block">Signing Domain:</span>
+                    <span id="dkim-domain" class="font-mono text-slate-200 break-all">-</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block">Selector:</span>
+                    <span id="dkim-selector" class="font-mono text-slate-200">-</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block">Body Hash & Sig:</span>
+                    <span id="dkim-hashes" class="font-mono text-cyan-400">-</span>
+                  </div>
+                </div>
+              </div>
+              <p id="dkim-explanation" class="text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-800">
+                Awaiting analysis
+              </p>
+            </div>
+
+            <!-- DMARC Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-400">DMARC (RFC 7489)</span>
+                  <span id="dmarc-status-badge" class="text-xs px-2 py-0.5 rounded font-bold bg-slate-800 text-slate-400">-</span>
+                </div>
+                <div class="text-xs space-y-1.5 mt-3">
+                  <div>
+                    <span class="text-slate-500 block">Header From:</span>
+                    <span id="dmarc-from" class="font-mono text-slate-200 break-all">-</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block">Policy / Disposition:</span>
+                    <span id="dmarc-policy" class="font-mono text-slate-200">-</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-500 block">Identifier Alignment:</span>
+                    <span id="dmarc-alignment" class="font-mono text-cyan-400">-</span>
+                  </div>
+                </div>
+              </div>
+              <p id="dmarc-explanation" class="text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-800">
+                Awaiting analysis
+              </p>
+            </div>
+          </div>
+
+          <!-- Synthetic Authentication-Results RFC 7601 Header -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Generated Authentication-Results Header (RFC 7601 / RFC 8601)
+              </span>
+              <button onclick="copyToClipboard('auth-results-code')" class="text-xs text-cyan-400 hover:text-cyan-300">
+                Copy Header
+              </button>
+            </div>
+            <pre id="auth-results-code" class="mt-3 p-3 bg-slate-950 rounded-xl text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed border border-slate-800/80"># Authentication-Results header will appear here after verification</pre>
+          </div>
+
+          <!-- RFC 7489 RUA Aggregate XML Report Preview Accordion -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+            <details class="group">
+              <summary class="flex items-center justify-between cursor-pointer text-xs font-bold uppercase tracking-wider text-slate-400 list-none">
+                <span class="flex items-center gap-2">
+                  <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                  </svg>
+                  RFC 7489 DMARC Aggregate Feedback XML Report (RUA Preview)
+                </span>
+                <span class="text-cyan-400 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div class="mt-3 pt-3 border-t border-slate-800">
+                <pre id="rua-xml-code" class="p-3 bg-slate-950 rounded-xl text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed border border-slate-800/80 max-h-64"></pre>
+              </div>
+            </details>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: DKIM KEY STUDIO ==================== -->
+    <div id="view-dkim" class="space-y-6 hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+          </svg>
+          DKIM Key Generation & Outgoing Mail Signer
+        </h2>
+        <p class="text-sm text-slate-400 mt-1">
+          Generate production-grade 2048-bit RSA keypairs, publish public keys to DNS, and cryptographically sign outgoing emails.
+        </p>
+
+        <!-- Keygen Form -->
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-950 rounded-xl border border-slate-800">
+          <div>
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Domain Name (d=)</label>
+            <input id="keygen-domain" type="text" value="example.com" class="w-full text-xs font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Selector (s=)</label>
+            <input id="keygen-selector" type="text" value="default" class="w-full text-xs font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Key Size</label>
+            <div class="flex gap-2">
+              <select id="keygen-bits" class="flex-1 text-xs font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                <option value="2048" selected>2048-bit (NIST Standard)</option>
+                <option value="1024">1024-bit (Fast Demo)</option>
+              </select>
+              <button onclick="runKeygen()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-bold text-white transition">
+                Generate
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Generated Key Details -->
+        <div id="keygen-results" class="mt-6 space-y-4 hidden">
+          <div class="p-4 bg-cyan-950/40 border border-cyan-800/60 rounded-xl">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-cyan-400 mb-1">DNS TXT Record to Publish in Nameserver</h4>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 text-xs mt-2">
+              <div class="md:col-span-4">
+                <span class="text-slate-500 block">Host / Record Name:</span>
+                <code id="dns-record-name" class="text-white block mt-0.5 select-all"></code>
+              </div>
+              <div class="md:col-span-8">
+                <span class="text-slate-500 block">Record Value (TXT):</span>
+                <code id="dns-record-val" class="text-cyan-300 block mt-0.5 break-all select-all"></code>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-xs font-semibold text-slate-400">Private Key (Keep Confidential - Used by Outgoing MTA)</label>
+                <button onclick="copyToClipboard('priv-key-display')" class="text-xs text-cyan-400">Copy</button>
+              </div>
+              <textarea id="priv-key-display" rows="8" readonly class="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-300"></textarea>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-xs font-semibold text-slate-400">Public Key (SubjectPublicKeyInfo)</label>
+                <button onclick="copyToClipboard('pub-key-display')" class="text-xs text-cyan-400">Copy</button>
+              </div>
+              <textarea id="pub-key-display" rows="8" readonly class="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-300"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Outgoing Mail Signer Section -->
+        <div class="mt-8 pt-6 border-t border-slate-800">
+          <h3 class="text-md font-bold text-white flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            Sign Outgoing Email with Generated Private Key
+          </h3>
+          <p class="text-xs text-slate-400 mt-1">Compose or paste an unsigned email message, sign it, and immediately inspect the result.</p>
+
+          <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs font-semibold text-slate-400 block mb-1">Unsigned Raw Email</label>
+              <textarea id="unsigned-email-input" rows="10" class="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-300">From: Alice <alice@example.com>
+To: Bob <bob@clientcorp.com>
+Subject: Security Verification Test
+Date: Fri, 07 Nov 2026 12:00:00 +0000
+Message-ID: <test-99@example.com>
+
+Hello Bob,
+This email is signed with our newly generated RSA DKIM key.
+Best regards,
+Alice</textarea>
+              <button onclick="runSignOutgoing()" class="mt-3 w-full py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-bold text-white transition flex items-center justify-center gap-2">
+                Sign Outgoing Email
+              </button>
+            </div>
+
+            <div>
+              <label class="text-xs font-semibold text-slate-400 block mb-1">DKIM-Signed Output</label>
+              <textarea id="signed-email-output" rows="10" readonly class="w-full text-xs font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-300" placeholder="Signed email will appear here..."></textarea>
+              <button onclick="loadSignedIntoInspector()" class="mt-3 w-full py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-bold text-white transition flex items-center justify-center gap-2">
+                Send Directly into Header Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: POLICY STAGING ==================== -->
+    <div id="view-staging" class="space-y-6 hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          DMARC Phased Deployment Roadmap & Policy Staging
+        </h2>
+        <p class="text-sm text-slate-400 mt-1">
+          Industry best practices for transitioning your domain from initial monitoring to full spoofing enforcement.
+        </p>
+
+        <!-- 3 Phase Roadmap Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+
+          <!-- Phase 1 Card -->
+          <div class="p-5 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-between hover:border-slate-700 transition">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800">Phase 1</span>
+                <span class="text-xs font-mono text-slate-400">p=none</span>
+              </div>
+              <h4 class="text-md font-bold text-white mt-3">Monitoring & Discovery</h4>
+              <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                Publish a monitoring policy. Email delivery is never blocked. Review daily RUA aggregate XML reports to discover all legitimate third-party senders (Salesforce, SendGrid, Zendesk, etc.).
+              </p>
+              <div class="mt-4 p-2.5 bg-slate-900 rounded-lg font-mono text-[11px] text-blue-300 break-all select-all">
+                v=DMARC1; p=none; pct=100; rua=mailto:dmarc-rua@example.com;
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
+              <span class="text-emerald-400 font-semibold">Goal:</span> Complete sender audit & fix SPF/DKIM misconfigurations.
+            </div>
+          </div>
+
+          <!-- Phase 2 Card -->
+          <div class="p-5 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-between hover:border-slate-700 transition">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800">Phase 2</span>
+                <span class="text-xs font-mono text-slate-400">p=quarantine</span>
+              </div>
+              <h4 class="text-md font-bold text-white mt-3">Quarantine & Soft Enforcement</h4>
+              <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                Once legitimate senders are aligned, divert spoofed messages to spam/quarantine. Senders can gradually ramp percentage (e.g. pct=25, pct=50, pct=100).
+              </p>
+              <div class="mt-4 p-2.5 bg-slate-900 rounded-lg font-mono text-[11px] text-amber-300 break-all select-all">
+                v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc-rua@example.com;
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
+              <span class="text-amber-400 font-semibold">Goal:</span> Neutralize spoofing in user inboxes without hard drops.
+            </div>
+          </div>
+
+          <!-- Phase 3 Card -->
+          <div class="p-5 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-between hover:border-slate-700 transition">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold px-2 py-0.5 rounded bg-rose-950 text-rose-400 border border-rose-800">Phase 3</span>
+                <span class="text-xs font-mono text-slate-400">p=reject</span>
+              </div>
+              <h4 class="text-md font-bold text-white mt-3">Full Rejection & Brand Protection</h4>
+              <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                Receiving mail gateways will outright reject and drop unauthorized emails during SMTP transaction. Zero phishing emails reach users.
+              </p>
+              <div class="mt-4 p-2.5 bg-slate-900 rounded-lg font-mono text-[11px] text-rose-300 break-all select-all">
+                v=DMARC1; p=reject; pct=100; rua=mailto:dmarc-rua@example.com; aspf=r; adkim=r;
+              </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
+              <span class="text-rose-400 font-semibold">Goal:</span> Complete cryptographic immunity to domain spoofing.
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: DNS ZONE ==================== -->
+    <div id="view-dns" class="space-y-6 hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+              </svg>
+              Gateway Nameserver DNS Zone Records
+            </h2>
+            <p class="text-sm text-slate-400 mt-1">
+              Active DNS records queried by the SPF, DKIM, and DMARC verification modules.
+            </p>
+          </div>
+          <button onclick="resetDnsZone()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+            Reset to Defaults
+          </button>
+        </div>
+
+        <!-- Add DNS Record Form -->
+        <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-12 gap-3">
+          <div class="md:col-span-4">
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Domain / FQDN</label>
+            <input id="new-dns-domain" type="text" placeholder="e.g. testdomain.com or _dmarc.testdomain.com" class="w-full text-xs font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Record Type</label>
+            <select id="new-dns-type" class="w-full text-xs font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+              <option value="TXT" selected>TXT</option>
+              <option value="A">A</option>
+              <option value="MX">MX</option>
+            </select>
+          </div>
+          <div class="md:col-span-4">
+            <label class="text-xs font-semibold text-slate-400 block mb-1">Record Value</label>
+            <input id="new-dns-value" type="text" placeholder="e.g. v=spf1 ip4:1.2.3.4 -all" class="w-full text-xs font-mono bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          </div>
+          <div class="md:col-span-2 flex items-end">
+            <button onclick="addDnsRecord()" class="w-full py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-bold text-white transition">
+              Add Record
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Records Table -->
+        <div class="mt-6 overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-4">Domain / Name</th>
+                <th class="py-3 px-4">Type</th>
+                <th class="py-3 px-4">Record Value</th>
+              </tr>
+            </thead>
+            <tbody id="dns-table-body" class="divide-y divide-slate-800 font-mono">
+              <!-- Populated via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 py-4 text-center text-xs text-slate-500">
+    Secure Email Authentication Gateway Engine • RFC 7208 (SPF) • RFC 6376 (DKIM) • RFC 7489 (DMARC) • RFC 7601 (Authentication-Results)
+  </footer>
+
+  <!-- JavaScript Client App -->
+  <script>
+    let scenariosData = [];
+
+    // Tab Navigation
+    function switchTab(tabId) {
+      ['inspector', 'dkim', 'staging', 'dns'].forEach(t => {
+        const view = document.getElementById(`view-${t}`);
+        const btn = document.getElementById(`tab-${t}`);
+        if (t === tabId) {
+          view.classList.remove('hidden');
+          btn.classList.add('bg-cyan-600', 'text-white');
+          btn.classList.remove('text-slate-400', 'hover:bg-slate-800');
+        } else {
+          view.classList.add('hidden');
+          btn.classList.remove('bg-cyan-600', 'text-white');
+          btn.classList.add('text-slate-400', 'hover:bg-slate-800');
+        }
+      });
+      if (tabId === 'dns') loadDnsTable();
+    }
+
+    // Load Scenarios
+    async function loadScenarios() {
+      try {
+        const res = await fetch('/api/scenarios');
+        scenariosData = await res.json();
+        const container = document.getElementById('scenario-buttons');
+        container.innerHTML = '';
+        scenariosData.forEach((sc, idx) => {
+          const btn = document.createElement('button');
+          btn.className = "text-xs px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 transition font-medium";
+          btn.textContent = sc.name.split(' (')[0];
+          btn.title = sc.description;
+          btn.onclick = () => selectScenario(idx);
+          container.appendChild(btn);
+        });
+
+        // Load first scenario automatically
+        if (scenariosData.length > 0) {
+          selectScenario(0);
+        }
+      } catch (err) {
+        console.error("Failed to load scenarios:", err);
+      }
+    }
+
+    function selectScenario(index) {
+      const sc = scenariosData[index];
+      if (!sc) return;
+      document.getElementById('raw-email-input').value = sc.raw_email;
+      document.getElementById('client-ip-input').value = '';
+      document.getElementById('envelope-from-input').value = '';
+      runInspection();
+    }
+
+    function clearInspectorInput() {
+      document.getElementById('raw-email-input').value = '';
+      document.getElementById('client-ip-input').value = '';
+      document.getElementById('envelope-from-input').value = '';
+      document.getElementById('raw-email-input').focus();
+    }
+
+    // Run Inspection
+    async function runInspection() {
+      const raw = document.getElementById('raw-email-input').value;
+      const clientIp = document.getElementById('client-ip-input').value.trim();
+      const envFrom = document.getElementById('envelope-from-input').value.trim();
+
+      if (!raw.trim()) {
+        alert("Please paste raw email headers or select a test scenario first.");
+        return;
+      }
+
+      const btn = document.getElementById('btn-inspect');
+      btn.disabled = true;
+      btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyzing Authentication...`;
+
+      try {
+        const res = await fetch('/api/inspect', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            raw_email: raw,
+            client_ip: clientIp || null,
+            envelope_from: envFrom || null
+          })
+        });
+
+        const data = await res.json();
+        renderResults(data);
+      } catch (err) {
+        console.error("Inspection error:", err);
+        alert("Error analyzing email: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Verify & Analyze Authentication`;
+      }
+    }
+
+    function renderResults(res) {
+      // 1. Executive Banner
+      const vBanner = document.getElementById('verdict-banner');
+      const vBadge = document.getElementById('verdict-badge');
+      const tBadge = document.getElementById('threat-badge');
+      const vTitle = document.getElementById('verdict-title');
+      const vDesc = document.getElementById('verdict-desc');
+      const actionBox = document.getElementById('action-box');
+      const actionText = document.getElementById('action-text');
+
+      const v = res.security_verdict;
+      vBadge.textContent = `VERDICT: ${v}`;
+      tBadge.textContent = `THREAT LEVEL: ${res.threat_level}`;
+      vTitle.textContent = res.threat_summary;
+      vDesc.textContent = `RFC 5322 From: ${res.parsed_headers.from || '(unknown)'} | Origin IP: ${res.parsed_headers.effective_client_ip}`;
+      actionBox.classList.remove('hidden');
+      actionText.textContent = res.recommended_action;
+
+      // Color coding
+      vBanner.className = "rounded-2xl p-5 shadow-xl transition-all border ";
+      if (v === 'PASS') {
+        vBanner.classList.add('bg-emerald-950/40', 'border-emerald-700/60');
+        vBadge.className = "px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-emerald-900/60 text-emerald-300 border border-emerald-700";
+        tBadge.className = "text-xs font-mono px-2 py-0.5 rounded bg-emerald-900/40 text-emerald-300";
+      } else if (v === 'REJECT') {
+        vBanner.classList.add('bg-rose-950/40', 'border-rose-700/60');
+        vBadge.className = "px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-rose-900/60 text-rose-300 border border-rose-700";
+        tBadge.className = "text-xs font-mono px-2 py-0.5 rounded bg-rose-900/40 text-rose-300";
+      } else if (v === 'QUARANTINE') {
+        vBanner.classList.add('bg-amber-950/40', 'border-amber-700/60');
+        vBadge.className = "px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-amber-900/60 text-amber-300 border border-amber-700";
+        tBadge.className = "text-xs font-mono px-2 py-0.5 rounded bg-amber-900/40 text-amber-300";
+      } else {
+        vBanner.classList.add('bg-slate-900', 'border-slate-800');
+        vBadge.className = "px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-blue-900/60 text-blue-300 border border-blue-700";
+        tBadge.className = "text-xs font-mono px-2 py-0.5 rounded bg-blue-900/40 text-blue-300";
+      }
+
+      // 2. SPF Card
+      const spf = res.spf;
+      const spfBadge = document.getElementById('spf-status-badge');
+      spfBadge.textContent = spf.status;
+      spfBadge.className = `text-xs px-2 py-0.5 rounded font-bold ${badgeColor(spf.status)}`;
+      document.getElementById('spf-domain').textContent = spf.domain;
+      document.getElementById('spf-ip').textContent = spf.client_ip;
+      document.getElementById('spf-mechanism').textContent = spf.matched_mechanism || 'None matched';
+      document.getElementById('spf-explanation').textContent = spf.explanation;
+
+      // 3. DKIM Card
+      const dkim = res.dkim;
+      const dkimBadge = document.getElementById('dkim-status-badge');
+      dkimBadge.textContent = dkim.status;
+      dkimBadge.className = `text-xs px-2 py-0.5 rounded font-bold ${badgeColor(dkim.status)}`;
+      document.getElementById('dkim-domain').textContent = dkim.domain || '(none)';
+      document.getElementById('dkim-selector').textContent = dkim.selector || '(none)';
+      document.getElementById('dkim-hashes').textContent = `Body: ${dkim.body_hash_match ? '✓ Valid' : '✗ Failed'} | RSA: ${dkim.signature_match ? '✓ Valid' : '✗ Failed'}`;
+      document.getElementById('dkim-explanation').textContent = dkim.explanation;
+
+      // 4. DMARC Card
+      const dmarc = res.dmarc;
+      const dmarcBadge = document.getElementById('dmarc-status-badge');
+      dmarcBadge.textContent = dmarc.status;
+      dmarcBadge.className = `text-xs px-2 py-0.5 rounded font-bold ${badgeColor(dmarc.status)}`;
+      document.getElementById('dmarc-from').textContent = dmarc.header_from_domain;
+      document.getElementById('dmarc-policy').textContent = `p=${dmarc.published_policy} (act: ${dmarc.disposition})`;
+      document.getElementById('dmarc-alignment').textContent = `SPF: ${dmarc.spf_aligned ? '✓ Aligned' : '✗ Unaligned'} | DKIM: ${dmarc.dkim_aligned ? '✓ Aligned' : '✗ Unaligned'}`;
+      document.getElementById('dmarc-explanation').textContent = dmarc.explanation;
+
+      // 5. Authentication-Results & RUA
+      document.getElementById('auth-results-code').textContent = res.auth_results_header;
+      document.getElementById('rua-xml-code').textContent = res.rua_xml;
+    }
+
+    function badgeColor(status) {
+      const s = (status || '').toUpperCase();
+      if (s === 'PASS') return 'bg-emerald-900/60 text-emerald-300 border border-emerald-700';
+      if (s === 'FAIL') return 'bg-rose-900/60 text-rose-300 border border-rose-700';
+      if (s === 'SOFTFAIL' || s === 'QUARANTINE') return 'bg-amber-900/60 text-amber-300 border border-amber-700';
+      return 'bg-slate-800 text-slate-400 border border-slate-700';
+    }
+
+    // Key Studio Functions
+    async function runKeygen() {
+      const domain = document.getElementById('keygen-domain').value.trim();
+      const selector = document.getElementById('keygen-selector').value.trim();
+      const bits = document.getElementById('keygen-bits').value;
+
+      try {
+        const res = await fetch('/api/keygen', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ domain, selector, bits })
+        });
+        const data = await res.json();
+        document.getElementById('keygen-results').classList.remove('hidden');
+        document.getElementById('dns-record-name').textContent = `${data.dns_record_name}.`;
+        document.getElementById('dns-record-val').textContent = `"${data.dns_record_value}"`;
+        document.getElementById('priv-key-display').value = data.private_key_pem;
+        document.getElementById('pub-key-display').value = data.public_key_pem;
+      } catch (err) {
+        alert("Keygen failed: " + err.message);
+      }
+    }
+
+    async function runSignOutgoing() {
+      const email = document.getElementById('unsigned-email-input').value;
+      const privKey = document.getElementById('priv-key-display').value;
+      const domain = document.getElementById('keygen-domain').value.trim();
+      const selector = document.getElementById('keygen-selector').value.trim();
+
+      if (!privKey) {
+        alert("Please generate a keypair first!");
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/sign', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            raw_email: email,
+            domain: domain,
+            selector: selector,
+            private_key_pem: privKey
+          })
+        });
+        const data = await res.json();
+        if (data.signed_email) {
+          document.getElementById('signed-email-output').value = data.signed_email;
+        } else {
+          alert(data.error || "Signing error");
+        }
+      } catch (err) {
+        alert("Signing failed: " + err.message);
+      }
+    }
+
+    function loadSignedIntoInspector() {
+      const signed = document.getElementById('signed-email-output').value;
+      if (!signed) {
+        alert("Please sign an email first!");
+        return;
+      }
+      document.getElementById('raw-email-input').value = signed;
+      switchTab('inspector');
+      runInspection();
+    }
+
+    // DNS Zone Table Functions
+    async function loadDnsTable() {
+      try {
+        const res = await fetch('/api/dns');
+        const records = await res.json();
+        const tbody = document.getElementById('dns-table-body');
+        tbody.innerHTML = '';
+
+        for (const [domain, types] of Object.entries(records)) {
+          for (const [rtype, vals] of Object.entries(types)) {
+            vals.forEach(val => {
+              const tr = document.createElement('tr');
+              tr.className = "hover:bg-slate-900/50 transition";
+              tr.innerHTML = `
+                <td class="py-2.5 px-4 text-cyan-300 font-semibold">${domain}</td>
+                <td class="py-2.5 px-4 text-indigo-400 font-bold">${rtype}</td>
+                <td class="py-2.5 px-4 text-slate-300 break-all select-all">${val}</td>
+              `;
+              tbody.appendChild(tr);
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load DNS table:", err);
+      }
+    }
+
+    async function addDnsRecord() {
+      const domain = document.getElementById('new-dns-domain').value.trim();
+      const rtype = document.getElementById('new-dns-type').value;
+      const value = document.getElementById('new-dns-value').value.trim();
+
+      if (!domain || !value) {
+        alert("Please enter both Domain and Record Value.");
+        return;
+      }
+
+      await fetch('/api/dns', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ domain, type: rtype, value })
+      });
+
+      document.getElementById('new-dns-domain').value = '';
+      document.getElementById('new-dns-value').value = '';
+      loadDnsTable();
+    }
+
+    async function resetDnsZone() {
+      if (confirm("Reset DNS zone records to defaults?")) {
+        await fetch('/api/dns/reset', { method: 'POST' });
+        loadDnsTable();
+      }
+    }
+
+    function copyToClipboard(id) {
+      const el = document.getElementById(id);
+      const text = el.value !== undefined ? el.value : el.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied to clipboard!");
+      });
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadScenarios();
+    });
+  </script>
+</body>
+</html>

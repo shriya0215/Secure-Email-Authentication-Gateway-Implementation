@@ -1,0 +1,76 @@
+{
+  "example.com": {
+    "TXT": [
+      "v=spf1 ip4:198.51.100.0/24 ip4:203.0.113.10 include:_spf.example.com -all"
+    ],
+    "A": [
+      "198.51.100.1"
+    ],
+    "MX": [
+      "mail.example.com"
+    ]
+  },
+  "_spf.example.com": {
+    "TXT": [
+      "v=spf1 ip4:198.51.100.50 ip4:198.51.100.51 -all"
+    ]
+  },
+  "_dmarc.example.com": {
+    "TXT": [
+      "v=DMARC1; p=reject; pct=100; rua=mailto:dmarc-rua@example.com; ruf=mailto:dmarc-ruf@example.com; adkim=r; aspf=r"
+    ]
+  },
+  "mail.example.com": {
+    "A": [
+      "198.51.100.10"
+    ]
+  },
+  "trustedbank.com": {
+    "TXT": [
+      "v=spf1 ip4:198.51.100.200 -all"
+    ],
+    "MX": [
+      "smtp.trustedbank.com"
+    ]
+  },
+  "_dmarc.trustedbank.com": {
+    "TXT": [
+      "v=DMARC1; p=reject; pct=100; rua=mailto:security@trustedbank.com; aspf=s; adkim=s"
+    ]
+  },
+  "startup.io": {
+    "TXT": [
+      "v=spf1 ip4:192.0.2.0/24 ~all"
+    ]
+  },
+  "_dmarc.startup.io": {
+    "TXT": [
+      "v=DMARC1; p=none; pct=100; rua=mailto:dmarc-reports@startup.io"
+    ]
+  },
+  "securecorp.org": {
+    "TXT": [
+      "v=spf1 ip4:192.0.2.80/28 -all"
+    ]
+  },
+  "_dmarc.securecorp.org": {
+    "TXT": [
+      "v=DMARC1; p=quarantine; pct=100; rua=mailto:aggregate@securecorp.org; ruf=mailto:forensics@securecorp.org"
+    ]
+  },
+  "corp.example.com": {
+    "TXT": [
+      "v=spf1 ip4:198.51.100.25 -all"
+    ]
+  },
+  "default._domainkey.example.com": {
+    "TXT": [
+      "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCMAqxbTM5lMClwadJc2EvqxuazyLShq89rpvAsrm1xrtTiFCoe5hsEq0SSs7eEmUSZTefiG2JqnYKqKAZDoFFehiPcff9S0sL95w7DZJEwI0HdSuXCUtY8pnwh5vEnp+xLN3J24VcJ2XrrgUoiQJe3atDkUrgbtYn49G9vxJbQ4wIDAQAB"
+    ]
+  },
+  "sec2026._domainkey.testportal.com": {
+    "TXT": [
+      "v=DKIM1; k=rsa; p=MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgGYhhMlEubxR9wr0xW1lNo4Nv6zBSNGM+D9jIqS5PinFSPCQFTxlP4PfTrPOjfhegRrYvzYhboyhmYbVAQ6c/A72Ra6NiUCEbXTt0LCf/pZOOHroK1Bf6c7pDMlyxoL7VW6jrMQYTdhvXnp1QuUOuzA2Q1v/csorMGSSEZhSMDo5AgMBAAE="
+    ]
+  }
+}

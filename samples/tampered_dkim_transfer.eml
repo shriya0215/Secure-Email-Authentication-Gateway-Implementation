@@ -1,0 +1,22 @@
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=example.com; s=default; t=1794060328; h=From:To:Subject:Date:Message-ID:Content-Type:MIME-Version; bh=xE9JRITnrp/QfyJ1OZgrX1+TzffJDHQNHAQxH1f6oLk=; b=cxpAW7ib04gcLsW5fogOzJceIR3DD55TfhYor03SoaMDxp/uLe6yCA+9ncl7wP6JF9VUPt8uaqkimkMoKJVMBz7OUXP4hrEOvuTEKHJ56/CxfF7xFIzoWgYyrP0sob3dD1ZK7/lzfAftcIyO+aei0UsbVJ+IhcfxR/pNc4uRdEk=
+Received: from rogue-relay.intercept-net.org ([203.0.113.77])
+    by mail-gw.antigravity.security with ESMTP id 98124
+    for <finance@clientcorp.com>; Fri, 07 Nov 2026 10:15:30 +0000
+Return-Path: <billing@example.com>
+From: Global Services Billing <billing@example.com>
+To: Accounts Payable <finance@clientcorp.com>
+Subject: Monthly Enterprise Invoice #INV-2026-8819
+Date: Fri, 07 Nov 2026 10:15:00 +0000
+Message-ID: <inv-2026-8819@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Dear Client Team,
+
+Please find attached your service invoice for November 2026.
+Total Amount Due: $98,750.00 USD (ROUTED TO NEW ATTACKER IBAN: GB29XAAA00000012345678).
+Payment Terms: Net 30 days.
+
+Best regards,
+Accounts Department
+Global Services Inc.

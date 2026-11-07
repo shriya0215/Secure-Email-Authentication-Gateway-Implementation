@@ -1,0 +1,14 @@
+Received: from bulk-relay.mailcloud.net ([198.51.100.99])
+    by mail-gw.antigravity.security with ESMTP id 12098
+    for <developer@somedomain.com>; Fri, 07 Nov 2026 09:00:00 +0000
+Return-Path: <marketing@unaligned-thirdparty.net>
+From: Startup Dev Weekly <newsletter@startup.io>
+To: Subscriber <developer@somedomain.com>
+Subject: Startup.io Weekly Digest #42 - Staging DMARC Deployment
+Date: Fri, 07 Nov 2026 09:00:00 +0000
+Message-ID: <weekly-42@startup.io>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Welcome to our newsletter! We are currently transitioning our domain
+to strict DMARC enforcement using p=none monitoring mode.
